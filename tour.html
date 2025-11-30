@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conny V3 | Home Dashboard</title>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* --- 1. DESIGN SYSTEM --- */
+        :root {
+            --bg: #0f172a;            
+            --panel: #1e293b;        
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;  
+            --accent-success: #4ade80;
+            --accent-warn: #f59e0b;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 260px 1fr; 
+            grid-template-rows: 60px 1fr;      
+            overflow: hidden;
+        }
+
+        /* --- 2. HEADER --- */
+        header {
+            grid-column: 1 / -1;
+            background: rgba(15, 23, 42, 0.9);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .logo { font-weight: 900; font-size: 1.2rem; display:flex; align-items:center; gap:10px; letter-spacing: -0.5px; }
+        .logo span { color: var(--accent); }
+
+        .omni-search {
+            position: relative; width: 400px;
+        }
+        .omni-search input {
+            width: 100%; background: var(--panel); border: 1px solid var(--border);
+            color: white; padding: 10px 40px 10px 15px; border-radius: 8px; outline: none;
+        }
+        .omni-search i { position: absolute; right: 12px; top: 10px; color: var(--text-muted); }
+
+        .user-menu { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: black; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+        /* --- 3. SIDEBAR --- */
+        aside {
+            grid-row: 2 / -1;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .nav-group-title { font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; letter-spacing: 1px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 6px;
+            color: var(--text-muted); cursor: pointer; transition: 0.2s; font-size: 0.9rem;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active { background: rgba(56, 189, 248, 0.1); color: var(--accent); border-left: 3px solid var(--accent); }
+        
+        .action-link { color: var(--accent); font-size: 0.85rem; margin-top: 5px; cursor: pointer; display: flex; align-items: center; gap: 6px; padding-left: 10px;}
+        .action-link:hover { text-decoration: underline; }
+
+        /* --- 4. DASHBOARD GRID (MAIN) --- */
+        main {
+            grid-column: 2 / -1;
+            grid-row: 2 / -1;
+            padding: 40px;
+            overflow-y: auto;
+            background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 60%);
+        }
+
+        .welcome-header { margin-bottom: 30px; }
+        .welcome-header h1 { margin: 0; font-size: 1.8rem; }
+        .welcome-header p { color: var(--text-muted); margin: 5px 0 0 0; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .dash-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .dash-card:hover { transform: translateY(-3px); border-color: var(--accent); background: rgba(30, 41, 59, 0.9); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .card-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .bg-blue { background: rgba(56, 189, 248, 0.1); color: var(--accent); }
+        .bg-green { background: rgba(74, 222, 128, 0.1); color: var(--accent-success); }
+        .bg-orange { background: rgba(245, 158, 11, 0.1); color: var(--accent-warn); }
+        .bg-purple { background: rgba(192, 132, 252, 0.1); color: #c084fc; }
+
+        .card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }
+        .card-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        
+        .stat-row { display: flex; gap: 15px; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+        .stat { font-size: 0.8rem; }
+        .stat strong { display: block; font-size: 1.2rem; color: white; }
+
+        /* Listen-Style Card (Favoriten) */
+        .list-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .list-item:last-child { border-bottom: none; }
+        .list-icon { color: var(--text-muted); }
+
+        /* --- 5. TUTORIAL POPUP (Draggable) --- */
+        #tutorial-popup {
+            position: fixed;
+            top: 100px;
+            right: 50px;
+            width: 320px;
+            background: white;
+            color: #0f172a;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow: hidden;
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: height 0.3s ease;
+        }
+
+        .popup-header {
+            background: linear-gradient(90deg, var(--accent), #3b82f6);
+            padding: 12px 15px;
+            color: white;
+            font-weight: bold;
+            cursor: move; /* Zeigt an, dass man ziehen kann */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popup-body {
+            padding: 20px;
+        }
+
+        .popup-footer {
+            padding: 15px 20px;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+            text-align: right;
+        }
+
+        .btn-tutorial {
+            background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.9rem;
+        }
+        .btn-tutorial:hover { background: #334155; }
+
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo"><i class="ph ph-graph"></i> <span>Conny</span></div>
+        <div class="omni-search">
+            <i class="ph ph-magnifying-glass"></i>
+            <input type="text" placeholder="Suche nach Ideen, Personen oder Hubs...">
+        </div>
+        <div class="user-menu">
+            <div style="text-align:right;">
+                <div style="font-weight:700;">Martin</div>
+                <div style="font-size:0.7rem; color:var(--accent);">Level 3 Human</div>
+            </div>
+            <div class="avatar">M</div>
+        </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside>
+        <div>
+            <div class="nav-group-title">Navigation</div>
+            <div class="nav-item active"><i class="ph ph-house"></i> Home</div>
+            <div class="nav-item"><i class="ph ph-tree-structure"></i> Meine Nodes/Hubs</div>
+            <div class="nav-item"><i class="ph ph-star"></i> Favoriten</div>
+            <div class="nav-item"><i class="ph ph-clock-counter-clockwise"></i> Verlauf</div>
+            
+            <div class="action-link" onclick="alert('Dialog: Neuer Node')">
+                <i class="ph ph-plus-circle"></i> Node erstellen...
+            </div>
+        </div>
+
+        <div>
+            <div class="nav-group-title">Lenses</div>
+            <div class="nav-item"><i class="ph ph-briefcase"></i> Work</div>
+            <div class="nav-item"><i class="ph ph-users"></i> Social</div>
+            <div class="nav-item"><i class="ph ph-map-pin"></i> Regional</div>
+            <div class="action-link"><i class="ph ph-plus"></i> Custom Lens...</div>
+        </div>
+
+        <div>
+            <div class="nav-group-title">Bookmarks</div>
+            <div class="nav-item" onclick="window.location.href='node.html'"><i class="ph ph-bookmark-simple"></i> Regal-Projekt</div>
+        </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD -->
+    <main>
+        <div class="welcome-header">
+            <h1>Willkommen zurück, Martin! 👋</h1>
+            <p>Dein Wissensnetzwerk wächst. Du hast 3 neue Social Echoes.</p>
+        </div>
+
+        <div class="dashboard-grid">
+            
+            <!-- Profil Card -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <div class="card-icon bg-purple"><i class="ph ph-user"></i></div>
+                    <i class="ph ph-dots-three" style="color:var(--text-muted)"></i>
+                </div>
+                <div class="card-title">Mein Profil (Anchor)</div>
+                <div class="card-desc">Verifizierter Level 3 Human. Deine Identität im Conny-Netzwerk.</div>
+                <div class="stat-row">
+                    <div class="stat"><strong>85</strong> Reputation</div>
+                    <div class="stat"><strong>1.2k</strong> Credits</div>
+                </div>
+            </div>
+
+            <!-- Nodes/Hubs Card -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <div class="card-icon bg-blue"><i class="ph ph-tree-structure"></i></div>
+                </div>
+                <div class="card-title">Meine Nodes & Hubs</div>
+                <div class="card-desc">Verwalte deine erstellten Inhalte und Projekte.</div>
+                <div class="stat-row">
+                    <div class="stat"><strong>12</strong> Nodes</div>
+                    <div class="stat"><strong>2</strong> Hubs (Owner)</div>
+                </div>
+            </div>
+
+            <!-- Favoriten Card -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <div class="card-icon bg-orange"><i class="ph ph-star-fill"></i></div>
+                </div>
+                <div class="card-title">Favoriten (Schnellzugriff)</div>
+                <div style="margin-top:15px;">
+                    <div class="list-item">
+                        <i class="ph ph-projector-screen list-icon"></i>
+                        <span style="font-size:0.9rem;">Regal Bauplan</span>
+                    </div>
+                    <div class="list-item">
+                        <i class="ph ph-wrench list-icon"></i>
+                        <span style="font-size:0.9rem;">Offene Werkstatt Wien</span>
+                    </div>
+                    <div class="list-item">
+                        <i class="ph ph-globe list-icon"></i>
+                        <span style="font-size:0.9rem;">Klimawandel Meta-Hub</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discovery Card -->
+            <div class="dash-card">
+                <div class="card-header">
+                    <div class="card-icon bg-green"><i class="ph ph-radar"></i></div>
+                </div>
+                <div class="card-title">Radar-Entdeckungen</div>
+                <div class="card-desc">In deiner Nähe (Wien) gibt es 5 neue Projekte zum Thema "Urban Gardening".</div>
+                <div style="margin-top:15px; color:var(--accent-success); font-size:0.8rem; font-weight:bold;">
+                    Jetzt ansehen &rarr;
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- TUTORIAL POPUP (DRAGGABLE & MINIMIZABLE) -->
+    <div id="tutorial-popup">
+        <div class="popup-header" id="popup-drag-handle">
+            <span>🎓 Erste Schritte</span>
+            <!-- Minimize Button -->
+            <i id="minimize-btn" class="ph ph-minus" style="cursor:pointer;" onclick="toggleMinimize()"></i>
+        </div>
+        <div class="popup-body" id="popup-content">
+            <p style="margin-top:0;">Willkommen in der <b>Prästartphase</b>!</p>
+            <p style="font-size:0.9rem; color:#475569;">
+                Dies ist das Dashboard. Um das Node-Konzept in Aktion zu sehen, haben wir ein Beispiel-Projekt vorbereitet.
+            </p>
+            <ul style="font-size:0.85rem; color:#475569; padding-left:20px;">
+                <li>Erlebe die 3 Modi (Deep, Connect, Flow)</li>
+                <li>Teste die Tools</li>
+                <li>Sieh dir die Privacy-Regeln an</li>
+            </ul>
+        </div>
+        <div class="popup-footer" id="popup-footer">
+            <a href="node.html" class="btn-tutorial">Zur Vorstellung: Eigene Nodes &rarr;</a>
+			<a href="regio.html" class="btn-tutorial">Zur Vorstellung: Regionaler Hub &rarr;</a>
+			<a href="klima.html" class="btn-tutorial">Zur Vorstellung: Meta Hub &rarr;</a>
+			<a href="index.html" class="btn-tutorial">Infos zum Konzept &rarr;</a>
+        </div>
+    </div>
+
+    <script>
+        // --- DRAG LOGIC FOR POPUP ---
+        const popup = document.getElementById("tutorial-popup");
+        const handle = document.getElementById("popup-drag-handle");
+        
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        handle.addEventListener("mousedown", (e) => {
+            // Prevent drag when clicking the icon itself if overlapping events occur
+            if(e.target.id === 'minimize-btn') return;
+
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            // Get current computed position
+            const rect = popup.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+            
+            // Remove 'right' positioning to allow left positioning to take over
+            popup.style.right = "auto"; 
+            popup.style.left = initialLeft + "px";
+            popup.style.top = initialTop + "px";
+            
+            handle.style.cursor = "grabbing";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            popup.style.left = `${initialLeft + dx}px`;
+            popup.style.top = `${initialTop + dy}px`;
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+            handle.style.cursor = "move";
+        });
+
+        // --- MINIMIZE LOGIC ---
+        function toggleMinimize() {
+            const content = document.getElementById('popup-content');
+            const footer = document.getElementById('popup-footer');
+            const btn = document.getElementById('minimize-btn');
+            
+            if (content.style.display === 'none') {
+                // Restore
+                content.style.display = 'block';
+                footer.style.display = 'block';
+                btn.classList.remove('ph-plus');
+                btn.classList.add('ph-minus');
+            } else {
+                // Minimize
+                content.style.display = 'none';
+                footer.style.display = 'none';
+                btn.classList.remove('ph-minus');
+                btn.classList.add('ph-plus');
+            }
+        }
+    </script>
+
+</body>
+</html>

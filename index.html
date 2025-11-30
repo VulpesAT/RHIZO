@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projekt Vorstellung - Dark Mode</title>
+    
+    <!-- Tailwind CSS (für schnelles, schönes Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Icons (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom Scrollbar für Webkit Browser */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 overflow-hidden">
+
+    <div class="flex h-screen">
+
+        <!-- Mobile Header (Sichtbar nur auf kleinen Bildschirmen) -->
+        <div class="md:hidden fixed w-full bg-gray-800 z-50 flex justify-between items-center p-4 border-b border-gray-700 shadow-md">
+            <span class="font-bold text-xl tracking-tight text-blue-400">Mein Projekt</span>
+            <button id="mobile-menu-btn" class="text-gray-300 hover:text-white focus:outline-none">
+                <i data-lucide="menu" class="w-8 h-8"></i>
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <!-- 'md:flex' macht es auf Desktop sichtbar, 'hidden' versteckt es standardmäßig auf Mobile -->
+        <aside id="sidebar" class="bg-gray-800 w-64 flex-shrink-0 border-r border-gray-700 flex-col transition-transform transform -translate-x-full md:translate-x-0 fixed md:relative z-40 h-full pt-20 md:pt-0">
+            
+            <div class="h-16 flex items-center px-8 border-b border-gray-700 hidden md:flex">
+                <i data-lucide="box" class="text-blue-500 w-6 h-6 mr-2"></i>
+                <span class="text-xl font-bold tracking-tight">Projektname</span>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-4">
+                <ul class="space-y-1">
+                    <!-- Hauptlink (Aktiv) -->
+                    <li>
+                        <a href="#" class="flex items-center px-6 py-3 bg-gray-700 border-r-4 border-blue-500 text-white">
+                            <i data-lucide="home" class="w-5 h-5 mr-3"></i>
+                            Übersicht
+                        </a>
+                    </li>
+                    
+                    <!-- Platzhalter Links für weitere HTML Seiten -->
+                    <li>
+                        <a href="features.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+                            <i data-lucide="layers" class="w-5 h-5 mr-3"></i>
+                            Funktionen
+                        </a>
+                    </li>
+                    <li>
+                        <a href="galerie.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+                            <i data-lucide="image" class="w-5 h-5 mr-3"></i>
+                            Galerie
+                        </a>
+                    </li>
+                    <li>
+                        <a href="team.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+                            <i data-lucide="users" class="w-5 h-5 mr-3"></i>
+                            Das Team
+                        </a>
+                    </li>
+                    <li>
+                        <a href="dokumentation.html" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors">
+                            <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
+                            Dokumentation
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="mt-8 px-6">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Links</p>
+                    <a href="#" class="flex items-center px-2 py-2 text-sm text-gray-400 hover:text-blue-400 transition-colors">
+                        <i data-lucide="github" class="w-4 h-4 mr-2"></i> GitHub Repo
+                    </a>
+                    <a href="#" class="flex items-center px-2 py-2 text-sm text-gray-400 hover:text-blue-400 transition-colors">
+                        <i data-lucide="twitter" class="w-4 h-4 mr-2"></i> Twitter
+                    </a>
+					<a href="#" class="flex items-center px-2 py-2 text-sm text-gray-400 hover:text-blue-400 transition-colors" onclick="window.location.href='tour.html'">
+                        <i data-lucide="demo" class="w-4 h-4 mr-2"></i> Tour zum Konzept
+                    </a>
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition-colors">
+                    Kontakt aufnehmen
+                </button>
+            </div>
+        </aside>
+
+        <!-- Overlay für Mobile Menu (Hintergrund abdunkeln) -->
+        <div id="overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+
+        <!-- Hauptinhalt -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden pt-16 md:pt-0 relative w-full">
+            <div class="flex-1 overflow-y-auto p-6 md:p-10">
+                
+                <!-- Hero Section -->
+                <div class="max-w-4xl mx-auto mb-12">
+                    <span class="inline-block px-3 py-1 mb-4 text-xs font-semibold tracking-wider text-blue-400 uppercase bg-blue-900 bg-opacity-30 rounded-full">
+                        Version 1.0 Release
+                    </span>
+                    <h1 class="text-4xl md:text-5xl font-bold mb-6 text-white leading-tight">
+                        Willkommen bei <span class="text-blue-500">Projektname</span>.
+                        <br>Die Zukunft beginnt hier.
+                    </h1>
+                    <p class="text-xl text-gray-400 mb-8 leading-relaxed">
+                        Dies ist eine kurze, prägnante Beschreibung deines Projekts. Erkläre hier in zwei bis drei Sätzen, welches Problem dein Projekt löst und warum es großartig ist. Das dunkle Design lenkt den Fokus auf den Inhalt.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="#" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg hover:shadow-blue-900/50" onclick="window.location.href='tour.html'">
+                            Tour Starten
+                        </a>
+                        <a href="#" class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-3 px-8 rounded-lg transition-all">
+                            Mehr erfahren
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Feature Grid -->
+                <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <!-- Feature 1 -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors group">
+                        <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-900 transition-colors">
+                            <i data-lucide="zap" class="text-blue-400 w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-white">Schnelle Performance</h3>
+                        <p class="text-gray-400">Optimierter Code sorgt für extrem schnelle Ladezeiten und eine flüssige Benutzererfahrung.</p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors group">
+                        <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-900 transition-colors">
+                            <i data-lucide="shield" class="text-blue-400 w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-white">Sicher & Privat</h3>
+                        <p class="text-gray-400">Datenschutz steht an erster Stelle. Wir nutzen modernste Verschlüsselungstechnologien.</p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors group">
+                        <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-900 transition-colors">
+                            <i data-lucide="smartphone" class="text-blue-400 w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-white">Responsive Design</h3>
+                        <p class="text-gray-400">Egal ob Desktop, Tablet oder Smartphone – das Layout passt sich perfekt an.</p>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 hover:border-blue-500 transition-colors group">
+                        <div class="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-900 transition-colors">
+                            <i data-lucide="code" class="text-blue-400 w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2 text-white">Open Source</h3>
+                        <p class="text-gray-400">Der Quellcode ist offen zugänglich und kann von der Community erweitert werden.</p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <footer class="max-w-4xl mx-auto border-t border-gray-800 pt-8 mt-12 text-center md:text-left">
+                    <p class="text-gray-500 text-sm">
+                        &copy; 2023 Dein Name / Projekt. Alle Rechte vorbehalten.
+                    </p>
+                </footer>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Icons initialisieren
+        lucide.createIcons();
+
+        // Mobile Menu Logic
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        function toggleMenu() {
+            // Toggle Sidebar Translation (rein/raus schieben)
+            sidebar.classList.toggle('-translate-x-full');
+            // Overlay anzeigen/verstecken
+            overlay.classList.toggle('hidden');
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleMenu);
+        overlay.addEventListener('click', toggleMenu);
+
+        // Sidebar Links schließen das Menü auf Mobile automatisch
+        const sidebarLinks = sidebar.querySelectorAll('a');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 768) { // Nur auf Mobile
+                    toggleMenu();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

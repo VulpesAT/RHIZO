@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conny V3 | Public View - Klimawandel</title>
+    <!-- Wir nutzen Vis.js für den Graphen -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Phosphor Icons für moderne Optik -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* --- 1. DESIGN SYSTEM (CYBER-PHYSICAL) --- */
+        :root {
+            --bg: #0f172a;            /* Deep Space */
+            --panel: #1e293b;        /* Surface */
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Logic Colors */
+            --accent-deep: #38bdf8;  /* Deep Dive (Logic) */
+            --accent-connect: #4ade80; /* Connect (Social) */
+            --accent-flow: #f472b6;  /* Flow (Media) */
+            
+            --private-color: #64748b; /* Private Node */
+            --project-color: #f59e0b; /* Project Anchor (Amber) */
+            --public-color: #f8fafc;  /* Public Hub */
+            
+            /* Topic Specific */
+            --climate-green: #10b981;
+            --climate-alert: #ef4444;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 260px 1fr; /* Sidebar | Main */
+            grid-template-rows: 60px 1fr;     /* Header | Content */
+        }
+
+        /* --- 2. LAYOUT COMPONENTS --- */
+        
+        /* HEADER (Omni-Search & Profile) */
+        header {
+            grid-column: 1 / -1;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+
+        .breadcrumb { font-weight: 500; font-size: 1rem; display:flex; align-items:center; gap:10px; color: var(--text-muted); }
+        .breadcrumb span { color: var(--text-main); font-weight: 700; }
+        .breadcrumb i { font-size: 1.2rem; }
+
+        /* OMNI-SEARCH */
+        .omni-search-container {
+            position: relative;
+            width: 400px;
+        }
+        .omni-input {
+            width: 100%;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 40px 8px 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .omni-input:focus {
+            border-color: var(--climate-green);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+            outline: none;
+        }
+        .search-icon { position: absolute; right: 12px; top: 10px; color: var(--text-muted); }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .avatar {
+            width: 32px; height: 32px; border-radius: 50%; background: var(--accent-deep);
+            display: flex; align-items: center; justify-content: center; font-weight: bold; color: black;
+        }
+
+        /* SIDEBAR (Lenses) */
+        aside {
+            grid-row: 2 / -1;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Increased spacing between groups */
+        }
+
+        .lens-group-title {
+            font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 10px; letter-spacing: 1px;
+        }
+        /* New style for main Navigation Headers */
+        .nav-category {
+            font-size: 0.95rem; font-weight: 600; color: white; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; cursor: pointer;
+        }
+        .nav-category:hover { color: var(--accent-deep); }
+        
+        .lens-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .lens-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .lens-item.active { background: rgba(56, 189, 248, 0.1); color: var(--accent-deep); border-left: 3px solid var(--accent-deep); }
+        .lens-item i { font-size: 1.1rem; }
+        
+        .lens-sub-item {
+            padding-left: 34px; font-size: 0.85rem; color: var(--text-muted); display:flex; align-items:center; gap:8px; cursor:pointer; padding-top:5px; padding-bottom:5px; border-radius:4px;
+        }
+        .lens-sub-item:hover { color: white; background: rgba(255,255,255,0.03); }
+
+        /* MAIN CONTENT AREA */
+        main {
+            grid-column: 2 / -1;
+            grid-row: 2 / -1;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            overflow: hidden;
+        }
+
+        /* --- 2.5 TOOLS PALETTE (NEW) --- */
+        #tools-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px; /* Collapsed width */
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+            gap: 10px;
+            z-index: 60;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: width 0.2s;
+        }
+        #tools-panel:hover { width: 45px; } /* Slight expand effect */
+
+        .tool-btn {
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: 0.2s;
+            position: relative;
+        }
+        .tool-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .tool-btn.active { color: #f59e0b; } /* Active Favorite/Pin color */
+        
+        .tool-separator { width: 20px; height: 1px; background: var(--border); margin: 5px 0; }
+        
+        /* Tooltips */
+        .tool-btn::after {
+            content: attr(data-tooltip);
+            position: absolute; left: 45px; top: 50%; transform: translateY(-50%);
+            background: black; color: white; padding: 4px 8px; border-radius: 4px;
+            font-size: 0.7rem; white-space: nowrap; pointer-events: none;
+            opacity: 0; transition: 0.2s; visibility: hidden;
+        }
+        .tool-btn:hover::after { opacity: 1; visibility: visible; }
+
+        /* --- 3. MODES (VIEW SWITCHER) --- */
+        .mode-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+            z-index: 50;
+        }
+        .mode-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex; align-items: center; gap: 6px;
+            transition: 0.3s;
+        }
+        .mode-btn:hover { color: white; }
+        
+        /* Mode Active States */
+        .mode-btn.active-deep { background: rgba(56, 189, 248, 0.2); color: var(--accent-deep); }
+        .mode-btn.active-connect { background: rgba(74, 222, 128, 0.2); color: var(--accent-connect); }
+        .mode-btn.active-flow { background: rgba(244, 114, 182, 0.2); color: var(--accent-flow); }
+
+        /* --- 3.1 COMMUNICATION PANEL --- */
+        #comm-panel {
+            position: absolute;
+            top: 80px; 
+            right: 20px;
+            width: 320px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            z-index: 45; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: max-height 0.3s ease-in-out;
+            overflow: hidden;
+            max-height: 400px;
+        }
+        
+        #comm-panel.minimized {
+            max-height: 42px; /* Header only */
+        }
+
+        .comm-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            padding: 0 5px;
+            height: 42px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comm-tabs {
+            display: flex;
+            gap: 2px;
+        }
+
+        .comm-tab {
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+        }
+        .comm-tab:hover { color: white; }
+        .comm-tab.active {
+            color: var(--accent-deep);
+            border-bottom-color: var(--accent-deep);
+        }
+
+        .comm-toggle {
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .comm-toggle:hover { color: white; }
+
+        .comm-body {
+            flex: 1;
+            padding: 15px;
+            display: none;
+            overflow-y: auto;
+            height: 250px;
+            background: rgba(0,0,0,0.1);
+        }
+        .comm-body.active { display: flex; flex-direction: column; }
+
+        /* Chat Bubbles Mockup */
+        .chat-bubble {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+        .chat-meta { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px; display:flex; justify-content:space-between;}
+
+        /* --- 4. VIEW CONTAINERS --- */
+        .view-container {
+            width: 100%; height: 100%; display: none; /* Hidden by default */
+        }
+        .view-container.active { display: block; animation: fadeIn 0.3s; }
+
+        /* Deep Dive: VisJS */
+        #graph-container { width: 100%; height: 100%; }
+
+        /* Connect: Mock Map */
+        #map-container { 
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/Vienna_city_districts_map.svg'); /* Mockup Map */
+            background-size: cover; background-position: center;
+            position: relative; filter: grayscale(80%) invert(90%);
+        }
+        .map-pin {
+            position: absolute; width: 40px; height: 40px; background: var(--accent-connect);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #0f172a; font-weight: bold; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            animation: pulse 2s infinite; cursor: pointer;
+        }
+        .map-pin.project-loc { background: var(--climate-green); color:white; border-color:white; animation: none; }
+        .map-pin img { width: 36px; height: 36px; border-radius: 50%; }
+
+        /* Flow: Cards */
+        #flow-container { padding: 40px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .flow-card {
+            background: var(--panel); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+            transition: transform 0.2s; cursor: pointer;
+        }
+        .flow-card:hover { transform: translateY(-5px); border-color: var(--accent-flow); }
+        .card-img { height: 160px; background: #334155; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 3rem;}
+        .card-body { padding: 15px; }
+        .card-tag { font-size: 0.7rem; color: var(--accent-flow); text-transform: uppercase; font-weight: bold; }
+        .card-warning { font-size: 0.7rem; color: #facc15; display: flex; align-items: center; gap: 4px; margin-top: 5px; background: rgba(250, 204, 21, 0.1); padding: 4px; border-radius: 4px;}
+
+        /* --- 5. RADAR (Overlay) --- */
+        #radar-panel {
+            position: absolute; bottom: 20px; left: 20px;
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 300px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 90;
+            transform: translateY(120%); transition: 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        #radar-panel.open { transform: translateY(0); }
+        .radar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .radar-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-deep); font-weight: bold; display: flex; align-items: center; gap: 6px;}
+        
+        .radar-item {
+            background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px;
+            font-size: 0.85rem; cursor: pointer; border-left: 2px solid transparent;
+        }
+        .radar-item:hover { background: rgba(255,255,255,0.1); }
+        .radar-item.global { border-color: var(--public-color); }
+        .radar-item.local { border-color: var(--accent-connect); }
+        .radar-item.social { border-color: #f472b6; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
+
+        /* --- 6. TUTORIAL POPUP (Ported from Dashboard) --- */
+        #tutorial-popup {
+            position: fixed;
+            top: 100px;
+            right: 50px;
+            width: 320px;
+            background: white;
+            color: #0f172a;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 1000;
+            overflow: hidden;
+            animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: height 0.3s ease;
+        }
+        .popup-header {
+            background: linear-gradient(90deg, var(--climate-green), #0ea5e9);
+            padding: 12px 15px;
+            color: white;
+            font-weight: bold;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .popup-body { padding: 20px; }
+        .popup-footer {
+            padding: 15px 20px;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+            text-align: right;
+        }
+        .btn-tutorial {
+            background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.9rem;
+        }
+        .btn-tutorial:hover { background: #334155; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. HEADER (Breadcrumbs & Context) -->
+    <header>
+        <div class="breadcrumb">
+            <i class="ph ph-house" style="cursor:pointer; color:var(--text-muted);" onclick="window.location.href='tour.html'"></i>
+            <i class="ph ph-caret-right"></i>
+            <span style="display:flex; align-items:center; gap:5px;">
+                <i class="ph ph-globe-hemisphere-west" style="color:var(--climate-green);"></i> 
+                Hub: Klimawandel Region Wien
+            </span>
+        </div>
+        
+        <div class="omni-search-container">
+            <i class="ph ph-magnifying-glass search-icon"></i>
+            <input type="text" class="omni-input" placeholder="Suche nach Daten, Initiativen oder News...">
+        </div>
+
+        <div class="user-profile">
+            <div style="text-align:right; margin-right:10px;">
+                <div style="font-weight:bold;">Martin</div>
+                <div style="font-size:0.7rem; color:var(--text-muted);">Rep: 85 (Handwerk)</div>
+            </div>
+            <div class="avatar">M</div>
+        </div>
+    </header>
+
+    <!-- 2. SIDEBAR (Navigation & Lenses) -->
+    <aside>
+        <!-- Block 1: Navigation -->
+        <div>
+            <div class="lens-group-title">Navigation</div>
+            <div class="nav-category" onclick="window.location.href='tour.html'">
+                <i class="ph ph-house-line"></i> Home
+            </div>
+            <div class="lens-item" onclick="switchLens(this, 'mynodes')">
+                <i class="ph ph-tree-structure"></i> Meine Nodes/Hubs
+            </div>
+            <div class="lens-item" onclick="switchLens(this, 'favorites')">
+                <i class="ph ph-star"></i> Favoriten
+            </div>
+            <div class="lens-item" onclick="switchLens(this, 'history')">
+                <i class="ph ph-clock-counter-clockwise"></i> Verlauf
+            </div>
+            
+            <div class="lens-sub-item" style="margin-top:5px; color:var(--accent-deep);" onclick="alert('Dialog: Neuen Node erstellen')">
+                <i class="ph ph-plus-circle"></i> Node erstellen...
+            </div>
+        </div>
+
+        <!-- Block 2: Context Lenses -->
+        <div>
+            <div class="lens-group-title">Context Lenses</div>
+			<div class="lens-item" onclick="switchLens(this, 'work')"><i class="ph ph-briefcase"></i> Work</div>
+            <div class="lens-item" onclick="switchLens(this, 'social')"><i class="ph ph-users"></i> Social</div>
+            <div class="lens-item active" onclick="switchLens(this, 'regional')"><i class="ph ph-map-pin"></i> Regional (Wien)</div>
+            
+            <div class="lens-sub-item" style="margin-top:5px; color:var(--accent-deep);">
+                <i class="ph ph-plus-circle"></i> Custom Lens...
+            </div>
+        </div>
+
+        <!-- Block 3: Topic Lenses (Bookmarks) -->
+        <div>
+            <div class="lens-group-title">Topic Lenses (Bookmarks)</div>
+            <div class="lens-item" onclick="window.location.href='node.html'" style="color:var(--text-muted);">
+                <i class="ph ph-bookmark-simple"></i> Regal-Projekt
+            </div>
+            <div class="lens-item"><i class="ph ph-hash"></i> Handwerk</div>
+            <div class="lens-item active" onclick="window.location.href='klima.html'" style="border-left-color:var(--climate-green); color:var(--climate-green);"><i class="ph ph-globe"></i> Klimawandel</div>
+        </div>
+    </aside>
+
+    <!-- 3. MAIN AREA -->
+    <main>
+        
+        <!-- TOOLS PALETTE -->
+        <div id="tools-panel">
+            <!-- Actions -->
+            <div class="tool-btn active" data-tooltip="Als Bookmark pinnen" onclick="toggleTool(this)">
+                <i class="ph ph-push-pin"></i>
+            </div>
+            <div class="tool-btn" data-tooltip="Zu Favoriten hinzufügen" onclick="toggleTool(this)">
+                <i class="ph ph-star"></i>
+            </div>
+            
+            <div class="tool-separator"></div>
+            
+            <!-- Project Tools -->
+            <div class="tool-btn" data-tooltip="Tasks & Kanban">
+                <i class="ph ph-kanban"></i>
+            </div>
+            <div class="tool-btn" data-tooltip="Files & Assets">
+                <i class="ph ph-files"></i>
+            </div>
+            <div class="tool-btn" data-tooltip="Settings">
+                <i class="ph ph-gear"></i>
+            </div>
+
+            <div class="tool-separator"></div>
+
+            <!-- Advanced / Governance -->
+             <div class="tool-btn" data-tooltip="Fork erstellen" onclick="alert('Fork Dialog: Kopiere diesen Hub...')">
+                <i class="ph ph-git-fork"></i>
+            </div>
+             <div class="tool-btn" data-tooltip="KI anpassen" onclick="alert('AI Config: Mediator-Persönlichkeit einstellen...')">
+                <i class="ph ph-robot"></i>
+            </div>
+        </div>
+
+        <!-- MODE SWITCHER (FLOATING) -->
+        <div class="mode-switcher">
+            <button class="mode-btn active-deep" onclick="setMode('deep')">
+                <i class="ph ph-brain"></i> Deep Dive
+            </button>
+            <button class="mode-btn" onclick="setMode('connect')">
+                <i class="ph ph-users-three"></i> Connect
+            </button>
+            <button class="mode-btn" onclick="setMode('flow')">
+                <i class="ph ph-film-strip"></i> Flow
+            </button>
+        </div>
+
+        <!-- COMMUNICATION PANEL -->
+        <div id="comm-panel">
+            <div class="comm-header">
+                <div class="comm-tabs">
+                    <div class="comm-tab active" onclick="switchCommTab('notes')">Notizen</div>
+                    <div class="comm-tab" onclick="switchCommTab('hub')">Hub-Chat</div>
+                    <div class="comm-tab" onclick="switchCommTab('dms')">DMs</div>
+                </div>
+                <div class="comm-toggle" onclick="toggleCommPanel()">
+                    <i class="ph ph-caret-up" id="comm-icon"></i>
+                </div>
+            </div>
+            
+            <!-- Tab: Notes -->
+            <div id="comm-notes" class="comm-body active">
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">
+                    <i class="ph ph-notebook"></i> Deine Gedanken zum Thema
+                </div>
+                <textarea style="width:100%; height:100%; flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; border-radius:4px; padding:8px; resize:none; font-family:inherit;" placeholder="- Artikel über CO2-Speicherung lesen...&#10;- Daten für Wien prüfen..."></textarea>
+            </div>
+
+            <!-- Tab: Hub Chat -->
+            <div id="comm-hub" class="comm-body">
+                 <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:5px;">
+                    <i class="ph ph-globe"></i> Public Channel: #Climate-General
+                </div>
+                
+                <div class="chat-bubble">
+                    <div class="chat-meta"><span>Sarah_Science</span> <span>09:12</span></div>
+                    Neue IPCC Daten sind im "Data"-Node verlinkt. Ziemlich drastisch.
+                </div>
+                <div class="chat-bubble" style="background:rgba(16, 185, 129, 0.1); border:1px solid rgba(16, 185, 129, 0.3);">
+                    <div class="chat-meta"><span style="color:var(--climate-green);">Du</span> <span>09:15</span></div>
+                    Danke, ich schau mir die regionalen Auswirkungen für Österreich an.
+                </div>
+                
+                <input type="text" placeholder="Nachricht schreiben..." style="background:rgba(0,0,0,0.3); border:1px solid var(--border); color:white; border-radius:4px; padding:8px; margin-top:auto;">
+            </div>
+
+            <!-- Tab: DMs -->
+            <div id="comm-dms" class="comm-body">
+                <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">
+                    <i class="ph ph-chats-teardrop"></i> Kontakte
+                </div>
+                <!-- Empty for now -->
+                <div style="text-align:center; color:var(--text-muted); padding-top:20px; font-size:0.8rem;">Keine offenen DMs in diesem Kontext.</div>
+            </div>
+        </div>
+
+        <!-- VIEW A: DEEP DIVE (GRAPH) -->
+        <div id="graph-container" class="view-container active"></div>
+
+        <!-- VIEW B: CONNECT (MAP) -->
+        <div id="map-container" class="view-container">
+            <!-- Pins for Climate Context -->
+            <div class="map-pin project-loc" style="top:48%; left:65%; width:60px; height:60px; font-size:1.5rem;" title="Globaler Fokus">
+                <i class="ph ph-globe"></i>
+            </div>
+
+            <div class="map-pin" style="top:35%; left:45%; width:30px; height:30px;" title="Uni Wien (Klima-Forschung)">
+                <i class="ph ph-student" style="font-size:1rem;"></i>
+            </div>
+             <div class="map-pin" style="top:55%; left:55%; background:#ef4444;" title="Hitze-Insel (Alert)">
+                <i class="ph ph-thermometer" style="font-size:1rem;"></i>
+            </div>
+            
+            <div style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:10px 20px; border-radius:20px; font-size:0.8rem;">
+                <i class="ph ph-info"></i> Map: Regionale Initiativen & Datenpunkte
+            </div>
+        </div>
+
+        <!-- VIEW C: FLOW (CARDS) -->
+        <div id="flow-container" class="view-container">
+            <!-- Cards generated via JS -->
+        </div>
+
+        <!-- RADAR OVERLAY -->
+        <div id="radar-panel">
+            <div class="radar-header">
+                <span class="radar-title"><i class="ph ph-radar"></i> Climate Radar</span>
+                <i class="ph ph-x" style="cursor:pointer;" onclick="toggleRadar(false)"></i>
+            </div>
+            <div class="radar-item global" onclick="alert('Connect to Global DB...')">
+                <div style="font-weight:bold;">🌍 IPCC Reports</div>
+                <div style="color:var(--text-muted); font-size:0.75rem;">Neue Daten verfügbar (2024)</div>
+            </div>
+            <div class="radar-item local" onclick="alert('Local Event...')">
+                <div style="font-weight:bold;">📍 Demo Wien</div>
+                <div style="color:var(--text-muted); font-size:0.75rem;">Freitag, 14:00 Heldenplatz</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- TUTORIAL POPUP -->
+    <div id="tutorial-popup">
+        <div class="popup-header" id="popup-drag-handle">
+            <span>🎓 Meta-Hub Guide</span>
+            <i id="minimize-btn" class="ph ph-minus" style="cursor:pointer;" onclick="toggleMinimize()"></i>
+        </div>
+        <div class="popup-body" id="popup-content">
+            <p style="margin-top:0;"><b>Hub: Klimawandel der Region Wien</b></p>
+            <p style="font-size:0.9rem; color:#475569;">
+                Dies ist ein Aggregations-Node. Er verbindet Daten, Diskurse und lokale Aktionen.
+            </p>
+            <ul style="font-size:0.85rem; color:#475569; padding-left:20px;">
+                <li>Zentrum: Der Themen-Cluster</li>
+                <li>Verbindungen: Wissenschaft, Politik, Aktionen</li>
+                <li>Map: Zeigt lokale Initiativen in Wien</li>
+            </ul>
+        </div>
+        <div class="popup-footer" id="popup-footer">
+            <a href="tour.html" class="btn-tutorial">Zurück zum Dashboard &rarr;</a>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. DATA SIMULATION (CLIMATE META-HUB) ---
+        const avatarMe = "https://api.dicebear.com/7.x/avataaars/svg?seed=Martin1&backgroundColor=b6e3f4";
+        
+        // Nodes
+        const nodesData = [
+            // META-HUB CENTER
+            { id: 'climate_root', label: 'THEMA:\nKlimawandel', shape: 'hexagon', size: 60, borderWidth: 4, color:{background:'#064e3b', border:'#10b981'}, font:{color:'#10b981', size:18}, group:'project' },
+            
+            // USER
+            { id: 'me', label: 'Martin', shape: 'circularImage', image: avatarMe, size: 25, color:{border:'#38bdf8'}, group:'anchor' },
+
+            // MAIN BRANCHES
+            { id: 'science', label: 'Wissenschaft\n(Daten/Fakten)', shape:'dot', size:20, color:{background:'#1e293b', border:'#38bdf8'} },
+            { id: 'politics', label: 'Politik\n(Global/Local)', shape:'dot', size:20, color:{background:'#1e293b', border:'#f59e0b'} },
+            { id: 'activism', label: 'Aktivismus\n(Social)', shape:'dot', size:20, color:{background:'#1e293b', border:'#f472b6'} },
+
+            // SUB NODES
+            { id: 'ipcc', label: 'IPCC\nReports', group:'hub', value: 15 },
+            { id: 'vienna', label: 'Wien\nKlimaplan', group:'hub', value: 15 },
+            { id: 'projects', label: 'Lokale\nProjekte', group:'social' },
+            
+            // CONTENT
+            { id: 'article1', label: 'Artikel:\nCO2 Budget', shape:'box', color:{background:'#1e293b', border:'#334155'} },
+            { id: 'alert1', label: '⚠️ Tipping\nPoints', shape:'diamond', color:{background:'#7f1d1d', border:'#ef4444'}, font:{color:'#ef4444'} }
+        ];
+
+        // Edges
+        const edgesData = [
+            // User Connection
+            { from: 'me', to: 'climate_root', label:'follows', color:{color:'#38bdf8'}, dashes:true },
+            
+            // Structure
+            { from: 'climate_root', to: 'science', width:2 },
+            { from: 'climate_root', to: 'politics', width:2 },
+            { from: 'climate_root', to: 'activism', width:2 },
+            
+            // Sub Connections
+            { from: 'science', to: 'ipcc' },
+            { from: 'politics', to: 'vienna' },
+            { from: 'activism', to: 'projects' },
+            
+            // Content Links
+            { from: 'science', to: 'article1' },
+            { from: 'science', to: 'alert1' },
+            
+            // Cross Links
+            { from: 'vienna', to: 'projects', label:'funding', dashes:true }
+        ];
+
+        // Flow Content (Climate Theme)
+        const flowData = [
+            { title: "Breaking: Neuer IPCC Bericht", tag: "#Science", img: "📊", warning: true, warningText: "Dringend handeln" },
+            { title: "Wien: Fassadenbegrünung", tag: "#Local", img: "🌿", warning: false },
+            { title: "Event: Kleidertausch-Party", tag: "#Social", img: "👕", warning: false },
+            { title: "Graph: Temperaturanstieg 2023", tag: "#Data", img: "📈", warning: false },
+            { title: "Debatte: Mobilität der Zukunft", tag: "#Politics", img: "🚆", warning: false },
+        ];
+
+        // --- 2. LOGIC ---
+        let network;
+        let nodes, edges;
+
+        function init() {
+            // Setup Vis.js
+            nodes = new vis.DataSet(nodesData);
+            edges = new vis.DataSet(edgesData);
+            
+            const container = document.getElementById('graph-container');
+            const data = { nodes: nodes, edges: edges };
+            const options = {
+                nodes: {
+                    font: { color: '#cbd5e1', face: 'Inter' },
+                    borderWidth: 2,
+                    shadow: true
+                },
+                groups: {
+                    project: { shape: 'hexagon' },
+                    hub: { 
+                        shape: 'hexagon', 
+                        color: { background: '#0f172a', border: '#38bdf8' },
+                        borderWidth: 3
+                    },
+                    social: {
+                        color: { border: '#4ade80' },
+                        borderWidth: 3,
+                        shape: 'dot'
+                    }
+                },
+                edges: {
+                    color: '#475569',
+                    arrows: 'to',
+                    smooth: { type: 'cubicBezier' }
+                },
+                physics: {
+                    stabilization: false,
+                    barnesHut: { gravitationalConstant: -4000 }
+                },
+                interaction: { hover: true }
+            };
+
+            network = new vis.Network(container, data, options);
+
+            // Trigger Radar on Root Click
+            network.on("click", function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    if(nodeId === 'climate_root') {
+                        toggleRadar(true);
+                    }
+                } else {
+                    toggleRadar(false);
+                }
+            });
+
+            // Init Flow
+            renderFlow();
+        }
+
+        // --- 3. MODE SWITCHING ---
+        function setMode(mode) {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.className = 'mode-btn'; 
+            });
+            document.querySelector(`.mode-btn[onclick="setMode('${mode}')"]`).classList.add(
+                mode === 'deep' ? 'active-deep' : 
+                mode === 'connect' ? 'active-connect' : 'active-flow'
+            );
+
+            document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+            
+            if(mode === 'deep') document.getElementById('graph-container').classList.add('active');
+            if(mode === 'connect') document.getElementById('map-container').classList.add('active');
+            if(mode === 'flow') document.getElementById('flow-container').classList.add('active');
+        }
+
+        // --- 3.1 COMM PANEL LOGIC ---
+        function switchCommTab(tab) {
+            document.querySelectorAll('.comm-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.comm-tab[onclick="switchCommTab('${tab}')"]`).classList.add('active');
+            document.querySelectorAll('.comm-body').forEach(b => b.classList.remove('active'));
+            document.getElementById('comm-' + tab).classList.add('active');
+        }
+
+        function toggleCommPanel() {
+            const p = document.getElementById('comm-panel');
+            const icon = document.getElementById('comm-icon');
+            p.classList.toggle('minimized');
+            if(p.classList.contains('minimized')) {
+                icon.classList.replace('ph-caret-up', 'ph-caret-down');
+            } else {
+                icon.classList.replace('ph-caret-down', 'ph-caret-up');
+            }
+        }
+
+        // --- 3.2 TOOLS TOGGLE ---
+        function toggleTool(el) {
+            el.classList.toggle('active');
+        }
+
+        // --- 4. RADAR ACTIONS ---
+        function toggleRadar(show) {
+            const el = document.getElementById('radar-panel');
+            if(show) el.classList.add('open');
+            else el.classList.remove('open');
+        }
+
+        // --- 5. LENS SWITCHING ---
+        function switchLens(el, lens) {
+            if(lens === 'home') { window.location.href='tour.html'; return; }
+            if(lens === 'mynodes') { window.location.href='tour.html'; return; } // Mockup link
+            
+            document.querySelectorAll('.lens-item').forEach(i => i.classList.remove('active'));
+            if(el.classList.contains('lens-item')) el.classList.add('active');
+        }
+
+        // --- 6. RENDER FLOW ---
+        function renderFlow() {
+            const container = document.getElementById('flow-container');
+            container.innerHTML = flowData.map(item => `
+                <div class="flow-card">
+                    <div class="card-img">${item.img}</div>
+                    <div class="card-body">
+                        <div class="card-tag">${item.tag}</div>
+                        <div style="font-weight:bold; margin-top:5px;">${item.title}</div>
+                        ${item.warning ? `<div class="card-warning"><i class="ph ph-warning"></i> ${item.warningText}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- 7. POPUP LOGIC ---
+        const popup = document.getElementById("tutorial-popup");
+        const handle = document.getElementById("popup-drag-handle");
+        
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        handle.addEventListener("mousedown", (e) => {
+            if(e.target.id === 'minimize-btn') return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = popup.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+            popup.style.right = "auto"; 
+            popup.style.left = initialLeft + "px";
+            popup.style.top = initialTop + "px";
+            handle.style.cursor = "grabbing";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            popup.style.left = `${initialLeft + dx}px`;
+            popup.style.top = `${initialTop + dy}px`;
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+            handle.style.cursor = "move";
+        });
+
+        function toggleMinimize() {
+            const content = document.getElementById('popup-content');
+            const footer = document.getElementById('popup-footer');
+            const btn = document.getElementById('minimize-btn');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                footer.style.display = 'block';
+                btn.classList.remove('ph-plus');
+                btn.classList.add('ph-minus');
+            } else {
+                content.style.display = 'none';
+                footer.style.display = 'none';
+                btn.classList.remove('ph-minus');
+                btn.classList.add('ph-plus');
+            }
+        }
+
+        // Boot
+        window.onload = init;
+
+    </script>
+</body>
+</html>
